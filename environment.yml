@@ -1,0 +1,13 @@
+name: DocumentDataset
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python
+  - pip
+  - numpy
+  - transformers
+  - sentencepiece
+  - Pillow
+  - ipykernel

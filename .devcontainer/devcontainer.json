@@ -1,0 +1,13 @@
+{
+	"name": "DocumentDataset",
+	"dockerFile": "../Dockerfile",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"eeyore.yapf",
+				"ms-toolsai.jupyter"
+			]
+		}
+	}
+}
