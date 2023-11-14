@@ -4,7 +4,7 @@ import os
 import PIL.Image
 import copy
 
-from .dataset import DocInfExtSample, DocInfExtDataset
+from .dataset import DocumentSample, DocumentDataset
 from .encode_decode import normalize_boxes, resize_image
 
 IOB2_TAG_FORMAT = "IOB2"
@@ -18,7 +18,7 @@ INFO_SPLITS = "splits"
 INFO_CITATION = "citation"
 
 
-def extract_labels(samples: dict[str, DocInfExtSample]):
+def extract_labels(samples: dict[str, DocumentSample]):
     labels_tags = set()
     entities_labels_tags = set()
     prefixes = set()
@@ -129,7 +129,7 @@ def load_sample(data_directory,
     if resize_images:
         boxes = normalize_boxes(boxes, image)
         image = resize_image(image)
-    sample = DocInfExtSample(id=id,
+    sample = DocumentSample(id=id,
                              words=words,
                              boxes=boxes,
                              labels=labels,
@@ -148,7 +148,7 @@ def load_dataset_info(dataset_directory) -> dict:
     return dataset_info
 
 
-def get_dataset_splits(samples: dict[str, DocInfExtSample], splits_info: dict):
+def get_dataset_splits(samples: dict[str, DocumentSample], splits_info: dict):
 
     def substitute_id_with_sample_object(splits):
         if isinstance(splits, dict):
@@ -198,7 +198,7 @@ def load_dataset(dataset_directory, tag_format="IOB2", resize_images=True):
     dataset_info = load_dataset_info(dataset_directory)
     dataset_splits = get_dataset_splits(samples,
                                         splits_info=dataset_info["splits"])
-    dataset = DocInfExtDataset(name=dataset_info[INFO_NAME],
+    dataset = DocumentDataset(name=dataset_info[INFO_NAME],
                                samples=samples,
                                splits=dataset_splits,
                                tag_format=tag_format,

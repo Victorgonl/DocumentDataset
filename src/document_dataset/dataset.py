@@ -5,7 +5,7 @@ import pprint
 
 
 @dataclasses.dataclass
-class DocInfExtSample:
+class DocumentSample:
     id: str
     words: list[str]
     boxes: list[list[int]]
@@ -17,11 +17,13 @@ class DocInfExtSample:
     def __repr__(self):
         return self.id
 
+    def __getitem__(self, item):
+        return self.__dict__[item]
+
 
 @dataclasses.dataclass
-class DocInfExtDataset:
+class DocumentDataset:
     name: str
-    samples: dict[str, DocInfExtSample]
     splits: dict
     tag_format: str
     tc_labels: list[str]
@@ -33,7 +35,12 @@ class DocInfExtDataset:
     citation: str = ""
 
     def __repr__(self):
-        return pprint.pformat(self.splits, sort_dicts=False)
+        repr = f"Dataset name: {self.name}"
+        repr += f"Tag formar: {self.tag_format}"
+        repr += f"Token Classification labels: {self.tc_labels}"
+        repr += f"Relation Extraction labels: {self.re_labels}"
+        repr += pprint.pformat(self.splits, sort_dicts=False)
+        return
 
     def __getitem__(self, item):
         return self.splits[item]
