@@ -199,7 +199,6 @@ def load_dataset(dataset_directory, tag_format="IOB2", resize_images=True):
     dataset_splits = get_dataset_splits(samples,
                                         splits_info=dataset_info["splits"])
     dataset = DocumentDataset(name=dataset_info[INFO_NAME],
-                               samples=samples,
                                splits=dataset_splits,
                                tag_format=tag_format,
                                tc_labels=tc_labels,
