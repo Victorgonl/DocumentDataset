@@ -36,7 +36,7 @@ class DocumentDataset:
 
     def __repr__(self):
         repr = f"Dataset name: {self.name}\n"
-        repr += f"Tag formart: {self.tag_format}\n"
+        repr += f"Tag format: {self.tag_format}\n"
         repr += f"Token Classification labels: {self.tc_labels}\n"
         repr += f"Relation Extraction labels: {self.re_labels}\n"
         repr += pprint.pformat(self.splits, sort_dicts=False)
