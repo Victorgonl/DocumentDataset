@@ -40,7 +40,7 @@ class DocumentDataset:
         repr += f"Token Classification labels: {self.tc_labels}"
         repr += f"Relation Extraction labels: {self.re_labels}"
         repr += pprint.pformat(self.splits, sort_dicts=False)
-        return
+        return repr
 
     def __getitem__(self, item):
         return self.splits[item]
