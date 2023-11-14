@@ -35,10 +35,10 @@ class DocumentDataset:
     citation: str = ""
 
     def __repr__(self):
-        repr = f"Dataset name: {self.name}"
-        repr += f"Tag formar: {self.tag_format}"
-        repr += f"Token Classification labels: {self.tc_labels}"
-        repr += f"Relation Extraction labels: {self.re_labels}"
+        repr = f"Dataset name: {self.name}\n"
+        repr += f"Tag formart: {self.tag_format}\n"
+        repr += f"Token Classification labels: {self.tc_labels}\n"
+        repr += f"Relation Extraction labels: {self.re_labels}\n"
         repr += pprint.pformat(self.splits, sort_dicts=False)
         return repr
 
