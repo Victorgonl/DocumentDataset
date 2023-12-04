@@ -21,4 +21,4 @@ RUN apt install cmake -y
 RUN pip install -r $PROJECT/requirements.txt
 
 ## install DocumentDataset
-RUN pip install . -e
+RUN pip install -e .
