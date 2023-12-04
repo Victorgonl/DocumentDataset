@@ -19,3 +19,6 @@ RUN apt install cmake -y
 
 ## install Python packages
 RUN pip install -r $PROJECT/requirements.txt
+
+## install DocumentDataset
+RUN pip install . -e

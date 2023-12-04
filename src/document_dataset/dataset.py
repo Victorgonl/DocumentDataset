@@ -1,18 +1,14 @@
 import PIL.Image
+import numpy
 import dataclasses
 import typing
 import pprint
 
 
-@dataclasses.dataclass
-class DocumentSample:
-    id: str
-    words: list[str]
-    boxes: list[list[int]]
-    labels: list[str]
-    entities: dict[str, list[int]]
-    relations: dict[str, list[int]]
-    image: typing.Union[None, PIL.Image.Image]
+class Sample:
+
+    def __init__(self, id: str) -> None:
+        self.id = id
 
     def __repr__(self):
         return f"DocumentSample {self.id}"
@@ -21,34 +17,77 @@ class DocumentSample:
         return self.__dict__[item]
 
 
-class DocumentSamplesList(list[DocumentSample]):
+class DocumentSample(Sample):
+
+    def __init__(self,
+                 id: str,
+                 words: list[str],
+                 boxes: list[list[int]],
+                 labels: list[str],
+                 entities: dict[str, list],
+                 relations: dict[str, list],
+                 image: typing.Union[None, PIL.Image.Image] = None) -> None:
+        self.id = id
+        self.words = words
+        self.boxes = boxes
+        self.labels = labels
+        self.entities = entities
+        self.relations = relations
+        self.image = image
+
+
+class EncodedDocumentSample(Sample):
+
+    def __init__(self,
+                 id: str,
+                 input_ids: list[int],
+                 bbox: list[list[int]],
+                 labels: list[int],
+                 entities: dict[str, list[int]],
+                 relations: dict[str, list[int]],
+                 attention_mask: list[int],
+                 image: typing.Union[None, numpy.ndarray] = None) -> None:
+        self.id = id
+        self.input_ids = input_ids
+        self.bbox = bbox
+        self.labels = labels
+        self.entities = entities
+        self.relations = relations
+        self.image = image
+        self.attention_mask = attention_mask
+
+    def __repr__(self):
+        return f"DocumentSample {self.id}"
+
+    def __getitem__(self, item):
+        return self.__dict__[item]
+
+
+class DocumentSamplesList(list[Sample]):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args)
         self.samples = self
-        self.samples_map: dict[str, DocumentSample] = dict()
+        self.samples_map: dict[str, Sample] = dict()
         for sample in self:
             self.samples_map[sample.id] = sample
 
     def __repr__(self):
         return f"DocumentSamplesList:\n {super().__repr__()}"
 
-    def __getitem__(self, item) -> DocumentSample:
+    def __getitem__(self, item) -> Sample:
         if isinstance(item, str):
             return self.samples_map[item]
         return super().__getitem__(item)
 
-    def append(self, __object: DocumentSample) -> None:
+    def append(self, __object: Sample) -> None:
         self.samples_map[__object.id] = __object
         return super().append(__object)
 
     def __add__(self, other):
         if isinstance(other, DocumentSamplesList):
             new = DocumentSamplesList(super().__add__(other))
-            new.samples_map = {
-                i: new[i]
-                for i in range(len(new))
-            }
+            new.samples_map = {i: new[i] for i in range(len(new))}
             return new
 
     def extract_samples_labels(self):
