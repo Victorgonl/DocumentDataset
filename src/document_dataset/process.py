@@ -1,6 +1,9 @@
+import typing
+
 import tqdm
 import transformers
 
+from .dataset import DocumentSamplesList, DocumentDataset, DocumentSample
 from .encode_decode import normalize_boxes, labels_to_ids, encode_image
 
 MAX_LENGHT = 512
@@ -159,29 +162,39 @@ def process_sample(sample,
     return processed_sample
 
 
-def process_dataset(dataset,
+def process_datasetz(datasets: typing.Union[DocumentDataset,
+                                            list[DocumentDataset]],
+                     tokenizer,
+                     labels_to_exclude=None,
+                     lowercase_all_words=False) -> DocumentSamplesList:
+
+    if isinstance(datasets, DocumentDataset):
+        datasets = [datasets]
+
+    document_samples = DocumentSamplesList()
+
+    for dataset in datasets:
+        tc_label2id = dataset.tc_label2id
+        re_label2id = dataset.re_label2id
+
+        processed_dataset = []
+
+        with tqdm.tqdm(desc="Processing dataset",
+                       total=len(dataset.samples)) as pbar:
+            for sample in list(dataset.samples):
+                processed_sample = process_sample(
+                    sample,
                     tokenizer,
-                    labels_to_exclude=None,
-                    lowercase_all_words=False):
+                    id=sample.id,
+                    tc_label2id=tc_label2id,
+                    re_label2id=re_label2id,
+                    max_lenght=MAX_LENGHT,
+                    labels_to_exclude=labels_to_exclude,
+                    lowercase_all_words=lowercase_all_words)
+                processed_dataset.append(processed_sample)
+                pbar.update()
 
-    tc_label2id = dataset.tc_label2id
-    re_label2id = dataset.re_label2id
+        document_samples.add_samples_from_dataset(dataset.name,
+                                                  processed_dataset)
 
-    processed_dataset = []
-
-    with tqdm.tqdm(desc="Processing dataset",
-                   total=len(dataset.samples)) as pbar:
-        for sample in list(dataset.samples.values()):
-            processed_sample = process_sample(
-                sample,
-                tokenizer,
-                id=sample.id,
-                tc_label2id=tc_label2id,
-                re_label2id=re_label2id,
-                max_lenght=MAX_LENGHT,
-                labels_to_exclude=labels_to_exclude,
-                lowercase_all_words=lowercase_all_words)
-            processed_dataset.append(processed_sample)
-            pbar.update()
-
-    return processed_dataset
+    return document_samples

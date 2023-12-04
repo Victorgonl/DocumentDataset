@@ -4,7 +4,7 @@ import os
 import PIL.Image
 import copy
 
-from .dataset import DocumentSample, DocumentDataset
+from .dataset import DocumentSample, DocumentDataset, DocumentSamplesList
 from .encode_decode import normalize_boxes, resize_image
 
 IOB2_TAG_FORMAT = "IOB2"
@@ -15,51 +15,13 @@ DATA_FORMAT = "json"
 
 INFO_NAME = "name"
 INFO_SPLITS = "splits"
-INFO_CITATION = "citation"
 
 
-def extract_labels(samples: dict[str, DocumentSample]):
-    labels_tags = set()
-    entities_labels_tags = set()
-    prefixes = set()
-    for sample in samples.values():
-        for label in sample.entities["label"]:
-            entities_labels_tags.add(label)
-        for label in sample.labels:
-            if label == "O":
-                continue
-            prefix, label = label.split("-")
-            prefixes.add(prefix)
-            labels_tags.add(label)
-    prefixes = sorted(list(prefixes))
-    labels_tags = list(labels_tags)
-    re_labels = list(entities_labels_tags)
-    tc_labels = ["O"]
-    for label in labels_tags:
-        for prefix in prefixes:
-            tc_labels.append(prefix + "-" + label)
-    return tc_labels, re_labels
-
-
-def create_label2id(labels: list[str]) -> dict[str, int]:
-    label2id: dict[str, int] = {}
-    for i in range(len(labels)):
-        label2id[labels[i]] = i
-    return label2id
-
-
-def create_id2label(labels: list[str]) -> dict[int, str]:
-    id2label: dict[int, str] = {}
-    for i in range(len(labels)):
-        id2label[i] = labels[i]
-    return id2label
-
-
-def check_data(data_directory):
+def check_data_directory(data_directory):
     return os.path.isfile(data_directory)
 
 
-def check_image(image_directory):
+def check_image_directory(image_directory):
     return os.path.isfile(image_directory)
 
 
@@ -69,9 +31,9 @@ def extract_words_boxes_labels_entities(data, tag_format):
     entities_map = {}
     for i in range(len(data)):
         entities_map[data[i]["id"]] = len(entities["start"])
-        entities["start"].append(len(words))
+        start = len(words)
         words += data[i]["words"]
-        entities["end"].append(len(words) - 1)
+        end = len(words) - 1
         boxes += data[i]["boxes"]
         for j in range(len(data[i]["words"])):
             if data[i]["label"] == "OTHER":
@@ -93,7 +55,10 @@ def extract_words_boxes_labels_entities(data, tag_format):
                         labels.append("E-" + data[i]["label"])
         label = data[i]["label"]
         label = "O" if label == "OTHER" else label
-        entities["label"].append(label)
+        if label != "O":
+            entities["start"].append(start)
+            entities["end"].append(end)
+            entities["label"].append(label)
     return words, boxes, labels, entities, entities_map
 
 
@@ -130,12 +95,12 @@ def load_sample(data_directory,
         boxes = normalize_boxes(boxes, image)
         image = resize_image(image)
     sample = DocumentSample(id=id,
-                             words=words,
-                             boxes=boxes,
-                             labels=labels,
-                             entities=entities,
-                             relations=relations,
-                             image=image)
+                            words=words,
+                            boxes=boxes,
+                            labels=labels,
+                            entities=entities,
+                            relations=relations,
+                            image=image)
     return sample
 
 
@@ -148,29 +113,27 @@ def load_dataset_info(dataset_directory) -> dict:
     return dataset_info
 
 
-def get_dataset_splits(samples: dict[str, DocumentSample], splits_info: dict):
+def load_splits(samples, dataset_info):
+    splits_info = copy.copy(dataset_info["splits"])
+    dataset_splits = copy.copy(splits_info)
 
-    def substitute_id_with_sample_object(splits):
-        if isinstance(splits, dict):
-            for key, value in splits.items():
-                if isinstance(value, (dict, list)):
-                    splits[key] = substitute_id_with_sample_object(value)
-                elif isinstance(value, str):
-                    splits[key] = samples[value]
-        elif isinstance(splits, list):
-            split_samples = dict()
-            for i, item in enumerate(splits):
-                split_samples[item] = samples[item]
-            splits = split_samples
-        return splits
+    def replace_id_by_sample(item):
+        if isinstance(item, dict):
+            for key in item.keys():
+                item[key] = replace_id_by_sample(item[key])
+        elif isinstance(item, list):
+            for i in range(len(item)):
+                item[i] = samples[item[i]]
+            return DocumentSamplesList(item)
+        return item
 
-    splits = copy.copy(splits_info)
-    splits = substitute_id_with_sample_object(splits)
-    return splits
+    replace_id_by_sample(dataset_splits)
+
+    return dataset_splits
 
 
 def load_dataset(dataset_directory, tag_format="IOB2", resize_images=True):
-    samples = dict()
+    document_samples = DocumentSamplesList()
     datas_directory = f"{dataset_directory}/data/"
     images_directory = f"{dataset_directory}/image/"
     data_files = sorted(os.listdir(datas_directory))
@@ -181,7 +144,9 @@ def load_dataset(dataset_directory, tag_format="IOB2", resize_images=True):
             data_directory = f"{datas_directory}/{id}.{DATA_FORMAT}"
             for image_extension in IMAGE_EXTENSIONS:
                 image_directory = f"{images_directory}/{id}.{image_extension}"
-                if check_data(data_directory) and check_image(image_directory):
+                if check_data_directory(
+                        data_directory) and check_image_directory(
+                            image_directory):
                     break
             if image_directory is None:
                 raise BaseException(
@@ -192,20 +157,15 @@ def load_dataset(dataset_directory, tag_format="IOB2", resize_images=True):
                                  tag_format=tag_format,
                                  id=id,
                                  resize_images=resize_images)
-            samples[sample.id] = sample
+            document_samples.append(sample)
             pbar.update()
-    tc_labels, re_labels = extract_labels(samples)
+    tokens_labels, entities_labels = document_samples.extract_samples_labels()
     dataset_info = load_dataset_info(dataset_directory)
-    dataset_splits = get_dataset_splits(samples,
-                                        splits_info=dataset_info["splits"])
+    dataset_splits = load_splits(document_samples, dataset_info)
     dataset = DocumentDataset(name=dataset_info[INFO_NAME],
-                               splits=dataset_splits,
-                               tag_format=tag_format,
-                               tc_labels=tc_labels,
-                               tc_label2id=create_label2id(tc_labels),
-                               tc_id2label=create_id2label(tc_labels),
-                               re_labels=re_labels,
-                               re_label2id=create_label2id(re_labels),
-                               re_id2label=create_id2label(re_labels),
-                               citation=dataset_info[INFO_CITATION])
+                              samples=document_samples,
+                              splits=dataset_splits,
+                              tag_format=tag_format,
+                              tokens_labels=tokens_labels,
+                              entities_labels=entities_labels)
     return dataset
