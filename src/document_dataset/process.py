@@ -190,8 +190,8 @@ def process_dataset(dataset: DocumentDataset,
         for sample in documents_samples_list:
             samples_to_process.append(sample)
 
-    tc_label2id = {v: k for k, v in dataset.tokens_labels.items()}
-    re_label2id = {v: k for k, v in dataset.entities_labels.items()}
+    tc_label2id = dataset.labels["tokens"]["label2id"]
+    re_label2id = dataset.labels["entities"]["label2id"]
 
     processed_dataset = DocumentSamplesList()
     with tqdm.tqdm(desc="Processing dataset",

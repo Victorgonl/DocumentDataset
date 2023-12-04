@@ -159,13 +159,12 @@ def load_dataset(dataset_directory, tag_format="IOB2", resize_images=True):
                                  resize_images=resize_images)
             document_samples.append(sample)
             pbar.update()
-    tokens_labels, entities_labels = document_samples.extract_samples_labels()
+    labels = document_samples.extract_samples_labels()
     dataset_info = load_dataset_info(dataset_directory)
     dataset_splits = load_splits(document_samples, dataset_info)
     dataset = DocumentDataset(name=dataset_info[INFO_NAME],
                               samples=document_samples,
                               splits=dataset_splits,
                               tag_format=tag_format,
-                              tokens_labels=tokens_labels,
-                              entities_labels=entities_labels)
+                              labels=labels)
     return dataset

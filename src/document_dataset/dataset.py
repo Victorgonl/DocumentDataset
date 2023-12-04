@@ -62,6 +62,33 @@ class EncodedDocumentSample(Sample):
     def __getitem__(self, item):
         return self.__dict__[item]
 
+    def __setitem__(self, key, item):
+        self.__dict__[key] = item
+
+    def __len__(self):
+        return len(self.__dict__)
+
+    def __delitem__(self, key):
+        del self.__dict__[key]
+
+    def clear(self):
+        return self.__dict__.clear()
+
+    def copy(self):
+        return self.__dict__.copy()
+
+    def has_key(self, k):
+        return k in self.__dict__
+
+    def update(self, *args, **kwargs):
+        return self.__dict__.update(*args, **kwargs)
+
+    def keys(self):
+        return self.__dict__.keys()
+
+    def values(self):
+        return self.__dict__.values()
+
 
 class DocumentSamplesList(list[Sample]):
 
@@ -98,6 +125,12 @@ class DocumentSamplesList(list[Sample]):
                 id2label[i] = labels[i]
             return id2label
 
+        def create_label2id(labels: list[str]) -> dict[str, int]:
+            label2id: dict[str, int] = {}
+            for i in range(len(labels)):
+                label2id[labels[i]] = i
+            return label2id
+
         labels_tags = set()
         entities_labels_tags = set()
         prefixes = set()
@@ -119,7 +152,18 @@ class DocumentSamplesList(list[Sample]):
             for prefix in prefixes:
                 tokens_labels.append(prefix + "-" + label)
 
-        return create_id2label(tokens_labels), create_id2label(entities_labels)
+        return {
+            "entities": {
+                "labels": entities_labels,
+                "id2label": create_id2label(entities_labels),
+                "label2id": create_label2id(entities_labels)
+            },
+            "tokens": {
+                "labels": tokens_labels,
+                "id2label": create_id2label(tokens_labels),
+                "label2id": create_label2id(tokens_labels)
+            }
+        }
 
 
 @dataclasses.dataclass
@@ -128,18 +172,13 @@ class DocumentDataset:
     samples: DocumentSamplesList
     splits: dict
     tag_format: str
-    tokens_labels: dict[int, str]
-    entities_labels: dict[int, str]
+    labels: dict
     citation: str = ""
-
-    def get_samples(self):
-        pass
 
     def __repr__(self):
         repr = f"Dataset name: {self.name}\n"
         repr += f"Tag format: {self.tag_format}\n"
-        repr += f"Tokens labels: {self.tokens_labels}\n"
-        repr += f"Entities labels: {self.entities_labels}\n"
+        repr += f"Labels: {self.labels}\n"
         repr += pprint.pformat(self.splits, sort_dicts=False)
         return repr
 
