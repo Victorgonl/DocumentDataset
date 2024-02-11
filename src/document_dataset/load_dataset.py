@@ -105,9 +105,7 @@ def load_sample(data_directory,
 
 
 def load_dataset_info(dataset_directory) -> dict:
-    normalized_path = os.path.normpath(dataset_directory)
-    _, dataset_name = os.path.split(normalized_path)
-    dataset_info_file = f"{dataset_directory}/{dataset_name}.json"
+    dataset_info_file = f"{dataset_directory}/dataset_info.json"
     with open(dataset_info_file, "r") as fp:
         dataset_info = json.load(fp)
     return dataset_info
