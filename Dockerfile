@@ -17,6 +17,8 @@ RUN apt install git wget -y
 # install cmake (to build sentencepiece)
 RUN apt install cmake -y
 
+RUN pip install ipykernel ipywidgets
+
 ## install Python packages
 RUN pip install -r $PROJECT/requirements.txt
 

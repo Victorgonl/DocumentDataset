@@ -2,4 +2,3 @@ numpy
 transformers
 sentencepiece
 Pillow
-ipykernel
